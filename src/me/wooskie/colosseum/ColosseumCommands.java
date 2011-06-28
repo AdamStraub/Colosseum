@@ -17,6 +17,8 @@ public class ColosseumCommands {
 		plugin = parent;
 	}
 	
+	// Runs when player right clicks team sign. Basic purpose is to
+	// add player to a team.
 	public void JoinTeam(Player player, String team) {
 		
 		// Checks to make sure player can join team:
@@ -35,7 +37,14 @@ public class ColosseumCommands {
 				}
 			}
 			if (redundant) {
-				Leave(player);
+				if (plugin.colosseumLocs.containsKey("quit")) {
+					player.teleport(plugin.colosseumLocs.get("quit"));
+				} else { player.sendMessage("Quit location not yet set."); }
+				ToStandardInventory(player);
+				plugin.roster.remove(player);
+				if (!VictoryCheck()) {
+					UpdateTeamSigns();
+				}
 				return;
 			} else if (teamSize >= 3) {
 				player.sendMessage("The " + team + " team is already full.");
@@ -73,17 +82,38 @@ public class ColosseumCommands {
 		
 	}
 	
-	public void Leave(Player player) {
-		if (plugin.colosseumLocs.containsKey("quit")) {
-			player.teleport(plugin.colosseumLocs.get("quit"));
-		} else { player.sendMessage("Quit location not yet set."); }
-		ToStandardInventory(player);
-		plugin.roster.remove(player);
-		if (!VictoryCheck()) {
-			UpdateTeamSigns();
+	// Sets a specific team to "ready":
+	public void TeamReady(String team) {
+		
+		// Sets team to ready:
+		if (team.equals("red")) {
+			plugin.redReady = true;
+			AnnounceAll(plugin.redString + " team is ready!");
+			for (Sign sign : plugin.colosseumSigns.keySet()) {
+				if (plugin.colosseumSigns.get(sign).equals("redready")) {
+					SetSignsToReady("redready");
+				}
+			}
+		}
+		else if (team.equals("blue")) { 
+			plugin.blueReady = true; 
+			AnnounceAll(plugin.blueString + " team is ready!");
+			for (Sign sign : plugin.colosseumSigns.keySet()) {
+				if (plugin.colosseumSigns.get(sign).equals("blueready")) {
+					SetSignsToReady("blueready");
+				}
+			}
+		}
+		
+		// Starts battle if both teams ready:
+		if (plugin.redReady && plugin.blueReady) {
+			plugin.battleInProgress = true;
+			AnnounceAll("Let the battle begin!");
+			OpenGates("inner");
 		}
 	}
 	
+	// Saves a player's inventory and replaces it with pvp inventory:
 	@SuppressWarnings("deprecation")
 	public void ToPvpInventory(Player player, String team) {
 	
@@ -120,6 +150,7 @@ public class ColosseumCommands {
 		player.updateInventory(); // deprecated command, but needed for now to ensure client properly reads server change.
 	}
 
+	// Restores a player's inventory after pvp match:
 	@SuppressWarnings("deprecation")
 	public void ToStandardInventory(Player player) {
 		// Halts method if player not on roster:
@@ -144,36 +175,7 @@ public class ColosseumCommands {
 		player.updateInventory(); // deprecated command, but needed for now to ensure client properly reads server change.
 	}
 	
-	public void TeamReady(String team) {
-		
-		// Sets team to ready:
-		if (team.equals("red")) {
-			plugin.redReady = true;
-			AnnounceAll(plugin.redString + " team is ready!");
-			for (Sign sign : plugin.colosseumSigns.keySet()) {
-				if (plugin.colosseumSigns.get(sign).equals("redready")) {
-					SetSignsToReady("redready");
-				}
-			}
-		}
-		else if (team.equals("blue")) { 
-			plugin.blueReady = true; 
-			AnnounceAll(plugin.blueString + " team is ready!");
-			for (Sign sign : plugin.colosseumSigns.keySet()) {
-				if (plugin.colosseumSigns.get(sign).equals("blueready")) {
-					SetSignsToReady("blueready");
-				}
-			}
-		}
-		
-		// Starts battle if both teams ready:
-		if (plugin.redReady && plugin.blueReady) {
-			plugin.battleInProgress = true;
-			AnnounceAll("Let the battle begin!");
-			OpenGates("inner");
-		}
-	}
-
+	// Sets all team ready signs to "ready":
 	public void SetSignsToReady(String signID) {
 		for (Sign sign : plugin.colosseumSigns.keySet()) {
 			if (plugin.colosseumSigns.get(sign).equals(signID)) {
@@ -183,6 +185,7 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Sets all team ready signs to "not ready":
 	public void SetSignsToNotReady(String signID) {
 		for (Sign sign : plugin.colosseumSigns.keySet()) {
 			if (plugin.colosseumSigns.get(sign).equals(signID)) {
@@ -192,6 +195,7 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Sets a specific team to "not ready":
 	public void TeamNotReady(String team) {
 		
 		// Sets team to not ready:
@@ -201,7 +205,6 @@ public class ColosseumCommands {
 			for (Sign sign : plugin.colosseumSigns.keySet()) {
 				if (plugin.colosseumSigns.get(sign).equals("redready")) {
 					SetSignsToNotReady("redready");
-					CloseGates("inner"); // temporary;
 				}
 			}
 		}
@@ -211,14 +214,15 @@ public class ColosseumCommands {
 			for (Sign sign : plugin.colosseumSigns.keySet()) {
 				if (plugin.colosseumSigns.get(sign).equals("blueready")) {
 					SetSignsToNotReady("blueready");
-					CloseGates("inner"); //temporary;
 				}
 			}
 		}
 	}
 	
+	// Runs when a player dies in arena, detected by player listener:
 	public void PlayerDeath(Player player) {
 		
+		// Sets player's "in play" status to false:
 		plugin.inPlay.put(player, false);
 		
 		// Announces player death:
@@ -236,10 +240,10 @@ public class ColosseumCommands {
 			} else {
 				player.sendMessage("Error: dead player location not yet set.");
 			}
-			plugin.inPlay.put(player, false);
 		}
 	}
-	
+
+	// Checks if the match has been won, and calls Victory class if so:
 	public boolean VictoryCheck() {
 		// Checks if victory conditions have been met:
 		int redLives = 0;
@@ -269,6 +273,8 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Runs when all the players on one team have died or left the match.
+	// Teleports players to victory or loss locations and resets the arena.
 	public void Victory(final String winningTeam, final HashMap<Player, String> roster) {
 		
 		if (winningTeam.equals("red")) {
@@ -307,9 +313,9 @@ public class ColosseumCommands {
 		OpenGates("inner");
 		OpenGates("outer");
 		//plugin.getServer().getScheduler().cancelTask(plugin.checkerID);
-		
 	}
 	
+	// Runs if a player logs out, as detected by player listener.
 	public void PlayerQuit(Player player) {
 		String team = plugin.roster.get(player);
 		AnnounceAll(plugin.chatColor + player.getDisplayName() + " on the " + 
@@ -317,6 +323,7 @@ public class ColosseumCommands {
 		VictoryCheck();
 	}
 	
+	// Generates strings with lists of players on each team. No longer used:
 	public String[] GenerateRoster() {
 		
 		String[] teamList = {"Red team: " + ChatColor.RED, "Blue Team: " + ChatColor.BLUE};
@@ -345,6 +352,7 @@ public class ColosseumCommands {
 
 	}
 	
+	// Announces a message to all players using the arena:
 	public void AnnounceAll(String message) {
 		// Announces message to all players using Colosseum:
 		for (Player key : plugin.roster.keySet()) {
@@ -352,6 +360,7 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Handles all arena-related sign clicks:
 	public void SignCommandHandler(Sign sign, Player player) {
 		
 		String signType = plugin.colosseumSigns.get(sign);
@@ -393,6 +402,7 @@ public class ColosseumCommands {
 		}
 	}
 
+	// Updates arena team signs with latest roster:
 	public void UpdateTeamSigns() {
 		int redLine;
 		int blueLine;
@@ -427,6 +437,7 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Opens either arena "inner" or "outer" gates depending upon input string.
 	public void OpenGates(String string) {
 		for (Location l : plugin.colosseumGates.keySet()) {
 			if (plugin.colosseumGates.get(l).equals(string)) {
@@ -435,6 +446,7 @@ public class ColosseumCommands {
 		}
 	}
 	
+	// Closes either arena "inner" or "outer" gates depending upon input string.
 	public void CloseGates(String string) {
 		for (Location l : plugin.colosseumGates.keySet()) {
 			if (plugin.colosseumGates.get(l).equals(string)) {
@@ -442,6 +454,5 @@ public class ColosseumCommands {
 			}
 		}
 	}
-	
 	
 }

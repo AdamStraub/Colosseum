@@ -17,31 +17,44 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Colosseum extends JavaPlugin{
 
+	// Sets logger for outputting to minecraft server console
 	Logger log = Logger.getLogger("Minecraft");
 	
+	// Defines plugin classes:
 	static ColosseumEntityListener eListener;
 	static ColosseumPlayerListener pListener;
 	static ColosseumCommands colosseumCommands;
-	static ColosseumActions colosseumActions;
 	static ColosseumData colosseumData;
 	static ColosseumMonitor colosseumMonitor;
 	
+	// Hashmaps for keeping track of player information:
 	public HashMap<Player, Boolean> inPlay = new HashMap<Player, Boolean>();
 	public HashMap<Player, String> roster = new HashMap<Player, String>();
 	public HashMap<Player, ItemStack[]> initialInvItemStack = new HashMap<Player, ItemStack[]>();
 	public HashMap<Player, ItemStack[]> initialArmItemStack = new HashMap<Player, ItemStack[]>();
+	
+	// Hashmaps for storing arena objects (i.e. teleport locations, signs, and gates):
 	public HashMap<String, Location> colosseumLocs = new HashMap<String, Location>();
 	public HashMap<Sign, String> colosseumSigns = new HashMap<Sign, String>();
 	public HashMap<Location, String> colosseumGates = new HashMap<Location, String>();
+	
+	// Booleans for identifying state of the arena:
 	public Boolean redReady = false;
 	public Boolean blueReady = false;
 	public Boolean battleInProgress = false;
 	public Boolean colosseumInUse = false;
+	
+	// Commonly used strings:
 	public ChatColor chatColor = ChatColor.YELLOW;
 	public String redString = ChatColor.RED + "RED" + chatColor;
 	public String blueString = ChatColor.BLUE + "BLUE" + chatColor;
+	
+	// ID tag for scheduled monitor task. Used for turning off monitor when not in use:
 	public int monitorID;
 	
+	
+	// Handles administrator console commands used to save and clear arena objects:
+	// Permissions needs to be implemented.
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
 		if (commandLabel.equalsIgnoreCase("pvp")) {
 			Player player = (Player) sender;
@@ -79,13 +92,13 @@ public class Colosseum extends JavaPlugin{
 		}
 		return false;
 	}
-
+	
+	// Runs when plugin is loaded. Nothing interesting, just initialization.
 	public void onEnable() {
 		
 		eListener = new ColosseumEntityListener( this );
 		pListener = new ColosseumPlayerListener( this );
 		colosseumCommands = new ColosseumCommands( this );
-		colosseumActions = new ColosseumActions( this );
 		colosseumData = new ColosseumData( this );
 		colosseumMonitor = new ColosseumMonitor( this );
 		
@@ -97,8 +110,10 @@ public class Colosseum extends JavaPlugin{
 		pm.registerEvent(Event.Type.ENTITY_DAMAGE, eListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_INTERACT, pListener, Priority.Normal, this);
 		pm.registerEvent(Event.Type.PLAYER_DROP_ITEM, pListener, Priority.Normal, this);
+		pm.registerEvent(Event.Type.PLAYER_QUIT, pListener, Priority.Normal, this);
 	}
 	
+	// Runs when plugin is disabled.
 	public void onDisable() {
 		log.info("Colosseum 0.1 disabled.");
 	}

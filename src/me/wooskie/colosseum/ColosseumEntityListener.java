@@ -11,7 +11,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.inventory.ItemStack;
-//import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.Plugin;
 
 public class ColosseumEntityListener extends EntityListener{
@@ -62,20 +61,13 @@ public class ColosseumEntityListener extends EntityListener{
 	     PlayerDeathRunnable(Player player) {
 	       this.player = player;
 	     }
-
 	     public void run() {
 	    	 Colosseum.colosseumCommands.PlayerDeath(player);
 	     }
-
 	  }
-
-
-	
 	
 	public void onEntityDamage(EntityDamageEvent event) {
-    	
 		Entity entity = event.getEntity();
-		
 		if (plugin.roster.containsKey(entity)) {
 			if (event instanceof EntityDamageByProjectileEvent) {
 	        	EntityDamageByProjectileEvent edbpe = (EntityDamageByProjectileEvent) event;
