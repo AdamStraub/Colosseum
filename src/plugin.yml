@@ -1,8 +1,0 @@
-name: Colosseum
-version: 0.1
-Author: Wooskie
-main: me.wooskie.colosseum.Colosseum
-commands:
-   pvp:
-      description: This is the unfinished pvp command.
-      usage: testy testy testy
